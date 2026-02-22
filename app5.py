@@ -36,8 +36,8 @@ class ReboundResult:
     rebound_pct: float
     rebound_hours: float
     drawdown_from_high: float
-    drawdown_21d: float           # New: 21d drawdown from highest to current
-    drawdown_flag: str             # New: Flag based on drawdown severity
+    drawdown_21d: float
+    drawdown_flag: str
     price_change_48h: float
     price_change_96h: float
     price_change_21d: float
@@ -58,8 +58,8 @@ class ReboundResult:
     low_21d_time: str
     high_21d_price: float
     high_21d_time: str
-    high_21d_for_drawdown: float  # New: Highest price in 21d for drawdown calc
-    high_21d_time_for_drawdown: str # New: Time of that high
+    high_21d_for_drawdown: float
+    high_21d_time_for_drawdown: str
     time_display: str
     candles_count: int
     scan_time: str
@@ -91,7 +91,7 @@ class WebScanner:
         self.filter_enabled = config.get('filter_enabled') == 'on'
         self.green_circle_min = float(config.get('green_circle_min', 17.0))
         self.green_circle_max = float(config.get('green_circle_max', 21.0))
-        self.max_results = int(config.get('max_results', 100))  # ADDED THIS
+        self.max_results = int(config.get('max_results', 100))
         
         self.progress_callback = progress_callback
         
@@ -152,7 +152,8 @@ class WebScanner:
             if response.status_code == 200:
                 return response.json()
             return None
-        except:
+        except Exception as e:
+            print(f"Error getting ticker for {symbol}: {e}")
             return None
     
     def get_klines(self, symbol: str, interval: str, limit: int) -> Optional[List]:
@@ -164,7 +165,8 @@ class WebScanner:
             if response.status_code == 200:
                 return response.json()
             return None
-        except:
+        except Exception as e:
+            print(f"Error getting klines for {symbol}: {e}")
             return None
     
     def analyze_time_window(self, symbol: str, lookback_hours: int, interval: str) -> Optional[Dict]:
@@ -241,6 +243,7 @@ class WebScanner:
                 'price_change': price_change
             }
         except Exception as e:
+            print(f"Error in analyze_time_window for {symbol}: {e}")
             return None
     
     def analyze_21d_with_drawdown(self, symbol: str, current_price: float) -> Optional[Dict]:
@@ -295,15 +298,15 @@ class WebScanner:
             
             # Determine flag based on drawdown percentage
             if drawdown_21d >= 30:
-                drawdown_flag = "🔴 CRITICAL"  # Red flag for severe drawdown
+                drawdown_flag = "🔴 CRITICAL"
             elif drawdown_21d >= 20:
-                drawdown_flag = "🟠 HIGH"      # Orange flag for high drawdown
+                drawdown_flag = "🟠 HIGH"
             elif drawdown_21d >= 10:
-                drawdown_flag = "🟡 MEDIUM"    # Yellow flag for medium drawdown
+                drawdown_flag = "🟡 MEDIUM"
             elif drawdown_21d >= 5:
-                drawdown_flag = "🟢 LOW"       # Green flag for low drawdown
+                drawdown_flag = "🟢 LOW"
             else:
-                drawdown_flag = "⚪ MINIMAL"    # White flag for minimal drawdown
+                drawdown_flag = "⚪ MINIMAL"
             
             # Format time
             high_time_str = high_time.strftime('%m/%d %H:%M')
@@ -315,6 +318,7 @@ class WebScanner:
                 'drawdown_flag': drawdown_flag
             }
         except Exception as e:
+            print(f"Error in analyze_21d_with_drawdown for {symbol}: {e}")
             return None
     
     def format_time_display(self, hours: float) -> str:
@@ -479,6 +483,7 @@ class WebScanner:
                 scan_time=datetime.now().strftime('%H:%M:%S')
             )
         except Exception as e:
+            print(f"Error analyzing pair {symbol}: {e}")
             return None
     
     def scan(self) -> List[ReboundResult]:
@@ -486,6 +491,7 @@ class WebScanner:
         print("Fetching pairs...")
         pairs = self.get_all_usdt_pairs()
         if not pairs:
+            print("No pairs found!")
             return []
         
         total_pairs = len(pairs)
@@ -516,6 +522,7 @@ class WebScanner:
         results.sort(key=lambda x: self.get_filter_price_change(x), reverse=True)
         
         self.results = results
+        print(f"Scan complete. Found {len(results)} results.")
         return results
 
 # Flask Routes
@@ -536,6 +543,7 @@ def scan():
     global latest_results, last_scan_time, scan_progress
     
     config = request.form.to_dict()
+    print(f"Received scan request with config: {config}")
     
     def update_progress(current, total, status):
         global scan_progress
@@ -551,6 +559,7 @@ def scan():
         
         scanner = WebScanner(config, progress_callback=update_progress)
         results = scanner.scan()
+        print(f"Scan returned {len(results)} results")
         
         with scan_lock:
             latest_results = results
@@ -585,6 +594,7 @@ def scan():
             'total_found': len(results)
         })
     except Exception as e:
+        print(f"Error in scan route: {e}")
         scan_progress = {"current": 0, "total": 0, "status": "error", "percentage": 0}
         return jsonify({'success': False, 'error': str(e)})
 
@@ -670,7 +680,11 @@ def cache_status():
     else:
         return jsonify({"cached": False})
 
+# This is the important change - for production, don't use app.run()
+# Gunicorn will run the app
+
 if __name__ == '__main__':
+    # Only for local development
     # Create templates directory if it doesn't exist
     if not os.path.exists('templates'):
         os.makedirs('templates')
@@ -2610,4 +2624,6 @@ if __name__ == '__main__':
     print("• Volume colors also commented")
     print("=" * 50)
     
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    # For local development only
+    if __name__ == '__main__':
+        app.run(debug=True, host='0.0.0.0', port=5000)
