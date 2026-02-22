@@ -1,0 +1,560 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Rebound Scanner</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+            text-align: center;
+        }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .config-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .config-item label {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #555;
+            font-size: 0.9em;
+        }
+
+        .config-item input,
+        .config-item select {
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .config-item input:focus,
+        .config-item select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .config-item.checkbox {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .config-item.checkbox input {
+            width: 20px;
+            height: 20px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex: 1;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #e0e0e0;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .status-bar {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .results {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9em;
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px;
+            position: sticky;
+            top: 0;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e0e0e0;
+            white-space: nowrap;
+        }
+
+        tr:hover {
+            background: #f5f5f5;
+        }
+
+        .symbol {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .green-circle {
+            display: inline-block;
+            margin-left: 5px;
+            color: #4caf50;
+        }
+
+        .percentage-high {
+            color: #ff4444;
+            font-weight: 600;
+        }
+
+        .percentage-medium {
+            color: #ffbb33;
+            font-weight: 600;
+        }
+
+        .percentage-low {
+            color: #00C851;
+            font-weight: 600;
+        }
+
+        .volume-high {
+            color: #aa66cc;
+            font-weight: 600;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .value {
+            font-size: 1.8em;
+            font-weight: 600;
+        }
+
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .download-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-small {
+            padding: 8px 15px;
+            font-size: 0.9em;
+            background: #f0f0f0;
+            color: #333;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .btn-small:hover {
+            background: #e0e0e0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Crypto Rebound Scanner</h1>
+
+            <form id="scanForm">
+                <div class="config-grid">
+                    <div class="config-item">
+                        <label>Lookback Hours (recent)</label>
+                        <input type="number" name="lookback_hours" value="12" step="1">
+                    </div>
+                    <div class="config-item">
+                        <label>48h Lookback</label>
+                        <input type="number" name="lookback_48h_hours" value="48" step="1">
+                    </div>
+                    <div class="config-item">
+                        <label>96h Lookback</label>
+                        <input type="number" name="lookback_96h_hours" value="96" step="1">
+                    </div>
+                    <div class="config-item">
+                        <label>21d Lookback (hours)</label>
+                        <input type="number" name="lookback_21d_hours" value="720" step="1">
+                    </div>
+                    <div class="config-item">
+                        <label>Min Rebound %</label>
+                        <input type="number" name="min_price_change" value="5" step="0.1">
+                    </div>
+                    <div class="config-item">
+                        <label>Min Volume 24h ($)</label>
+                        <input type="number" name="min_volume_24h" value="1400000" step="100000">
+                    </div>
+                    <div class="config-item">
+                        <label>Max Drawdown %</label>
+                        <input type="number" name="max_drawdown" value="4.2" step="0.1">
+                    </div>
+                    <div class="config-item">
+                        <label>Timeframe</label>
+                        <select name="timeframe">
+                            <option value="15m" selected>15m</option>
+                            <option value="1h">1h</option>
+                            <option value="4h">4h</option>
+                        </select>
+                    </div>
+                    <div class="config-item">
+                        <label>21d Timeframe</label>
+                        <select name="timeframe_21d">
+                            <option value="1h" selected>1h</option>
+                            <option value="4h">4h</option>
+                            <option value="1d">1d</option>
+                        </select>
+                    </div>
+                    <div class="config-item">
+                        <label>Filter Timeframe</label>
+                        <select name="filter_timeframe">
+                            <option value="48h">48h</option>
+                            <option value="96h">96h</option>
+                            <option value="21d" selected>21d</option>
+                        </select>
+                    </div>
+                    <div class="config-item checkbox">
+                        <input type="checkbox" name="filter_enabled" id="filter_enabled" checked>
+                        <label for="filter_enabled">Enable Filter</label>
+                    </div>
+                    <div class="config-item">
+                        <label>Green Circle Min %</label>
+                        <input type="number" name="green_circle_min" value="17.0" step="0.1">
+                    </div>
+                    <div class="config-item">
+                        <label>Green Circle Max %</label>
+                        <input type="number" name="green_circle_max" value="21.0" step="0.1">
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button type="submit" class="btn btn-primary" id="scanBtn">
+                        🔍 Run Scan
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="resetBtn">
+                        ↺ Reset to Defaults
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="status-bar hidden" id="statusBar">
+            <span id="statusMessage"></span>
+            <div class="download-buttons">
+                <button class="btn-small" onclick="downloadCSV()">📥 Download CSV</button>
+                <button class="btn-small" onclick="downloadJSON()">📥 Download JSON</button>
+            </div>
+        </div>
+
+        <div class="loader hidden" id="loader"></div>
+
+        <div class="results hidden" id="results">
+            <h2 style="margin-bottom: 20px;">📊 Scan Results</h2>
+            <div class="stats-grid" id="stats">
+                <!-- Stats will be populated by JavaScript -->
+            </div>
+            <div style="overflow-x: auto; max-height: 600px;">
+                <table id="resultsTable">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Symbol</th>
+                            <th>Current</th>
+                            <th>12h</th>
+                            <th>48h</th>
+                            <th>96h</th>
+                            <th>21d</th>
+                            <th>Time</th>
+                            <th>Drawdown</th>
+                            <th>Low→High</th>
+                            <th>48h Range</th>
+                            <th>96h Range</th>
+                            <th>21d Range</th>
+                            <th>Volume</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <!-- Results will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('scanForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const scanBtn = document.getElementById('scanBtn');
+            const loader = document.getElementById('loader');
+            const results = document.getElementById('results');
+            const statusBar = document.getElementById('statusBar');
+
+            scanBtn.disabled = true;
+            loader.classList.remove('hidden');
+            results.classList.add('hidden');
+            statusBar.classList.add('hidden');
+
+            const formData = new FormData(this);
+
+            try {
+                const response = await fetch('/scan', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    displayResults(data);
+                    statusBar.classList.remove('hidden');
+                    document.getElementById('statusMessage').textContent =
+                        `✅ Scan completed at ${data.scan_time} | Found ${data.count} rebounds`;
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            } finally {
+                scanBtn.disabled = false;
+                loader.classList.add('hidden');
+            }
+        });
+
+        document.getElementById('resetBtn').addEventListener('click', function () {
+            document.querySelectorAll('input[type="number"]').forEach(input => {
+                if (input.name === 'lookback_hours') input.value = '12';
+                if (input.name === 'lookback_48h_hours') input.value = '48';
+                if (input.name === 'lookback_96h_hours') input.value = '96';
+                if (input.name === 'lookback_21d_hours') input.value = '720';
+                if (input.name === 'min_price_change') input.value = '5';
+                if (input.name === 'min_volume_24h') input.value = '1400000';
+                if (input.name === 'max_drawdown') input.value = '4.2';
+                if (input.name === 'green_circle_min') input.value = '17.0';
+                if (input.name === 'green_circle_max') input.value = '21.0';
+            });
+
+            document.querySelectorAll('select').forEach(select => {
+                if (select.name === 'timeframe') select.value = '15m';
+                if (select.name === 'timeframe_21d') select.value = '1h';
+                if (select.name === 'filter_timeframe') select.value = '21d';
+            });
+
+            document.getElementById('filter_enabled').checked = true;
+        });
+
+        function displayResults(data) {
+            const results = document.getElementById('results');
+            const tableBody = document.getElementById('tableBody');
+            const statsDiv = document.getElementById('stats');
+
+            results.classList.remove('hidden');
+
+            // Calculate stats
+            const filterChanges = data.results.map(r => {
+                const filterTimeframe = document.querySelector('select[name="filter_timeframe"]').value;
+                if (filterTimeframe === '48h') return parseFloat(r.price_change_48h);
+                if (filterTimeframe === '96h') return parseFloat(r.price_change_96h);
+                return parseFloat(r.price_change_21d);
+            });
+
+            const reboundPcts = data.results.map(r => parseFloat(r.rebound_pct));
+
+            statsDiv.innerHTML = `
+                <div class="stat-card">
+                    <h3>Total Results</h3>
+                    <div class="value">${data.count}</div>
+                </div>
+                <div class="stat-card">
+                    <h3>${document.querySelector('select[name="filter_timeframe"]').value} Range</h3>
+                    <div class="value">${Math.min(...filterChanges).toFixed(1)}% - ${Math.max(...filterChanges).toFixed(1)}%</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Rebound Range</h3>
+                    <div class="value">${Math.min(...reboundPcts).toFixed(1)}% - ${Math.max(...reboundPcts).toFixed(1)}%</div>
+                </div>
+            `;
+
+            // Populate table
+            tableBody.innerHTML = data.results.map((r, index) => {
+                const filterTimeframe = document.querySelector('select[name="filter_timeframe"]').value;
+                let filterValue;
+                if (filterTimeframe === '48h') filterValue = parseFloat(r.price_change_48h);
+                else if (filterTimeframe === '96h') filterValue = parseFloat(r.price_change_96h);
+                else filterValue = parseFloat(r.price_change_21d);
+
+                const greenCircleMin = parseFloat(document.querySelector('input[name="green_circle_min"]').value);
+                const greenCircleMax = parseFloat(document.querySelector('input[name="green_circle_max"]').value);
+
+                const hasGreenCircle = filterValue >= greenCircleMin && filterValue <= greenCircleMax;
+
+                return `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td class="symbol">${r.symbol}${hasGreenCircle ? '<span class="green-circle">🟢</span>' : ''}</td>
+                        <td>${r.current_price}</td>
+                        <td class="${getPercentageClass(parseFloat(r.rebound_pct))}">${r.rebound_pct}</td>
+                        <td class="${getPercentageClass(parseFloat(r.price_change_48h))}">${r.price_change_48h}</td>
+                        <td class="${getPercentageClass(parseFloat(r.price_change_96h))}">${r.price_change_96h}</td>
+                        <td class="${getPercentageClass(parseFloat(r.price_change_21d), true)}">${r.price_change_21d}</td>
+                        <td>${r.time_display}</td>
+                        <td>${r.drawdown_from_high}</td>
+                        <td>${r.low_time}<br>↓<br>${r.high_time}</td>
+                        <td>${r.low_48h_time}<br>↓<br>${r.high_48h_time}</td>
+                        <td>${r.low_96h_time}<br>↓<br>${r.high_96h_time}</td>
+                        <td>${r.low_21d_time}<br>↓<br>${r.high_21d_time}</td>
+                        <td class="${getVolumeClass(r.volume_24h)}">${r.volume_24h}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function getPercentageClass(value, is21d = false) {
+            if (is21d) {
+                if (value >= 42) return 'percentage-high';
+                if (value >= 35) return 'percentage-medium';
+                if (value >= 5) return 'percentage-low';
+            } else {
+                if (value >= 25) return 'percentage-high';
+                if (value >= 14) return 'percentage-medium';
+                if (value >= 4) return 'percentage-low';
+            }
+            return '';
+        }
+
+        function getVolumeClass(volumeStr) {
+            const volume = parseFloat(volumeStr.replace(/[$,]/g, ''));
+            if (volume >= 10000000) return 'percentage-high';
+            if (volume >= 2000000) return 'percentage-medium';
+            return 'percentage-low';
+        }
+
+        function downloadCSV() {
+            window.location.href = '/download/csv';
+        }
+
+        function downloadJSON() {
+            window.location.href = '/download/json';
+        }
+    </script>
+</body>
+
+</html>
